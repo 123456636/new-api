@@ -122,20 +122,57 @@ const TopUp = () => {
       const res = await API.post('/api/user/topup', {
         key: redemptionCode,
       });
-      const { success, message, data } = res.data;
+      const { success, message, data, type, token_key } = res.data;
       if (success) {
         showSuccess(t('兑换成功！'));
-        Modal.success({
-          title: t('兑换成功！'),
-          content: t('成功兑换额度：') + renderQuota(data),
-          centered: true,
-        });
-        if (userState.user) {
-          const updatedUser = {
-            ...userState.user,
-            quota: userState.user.quota + data,
-          };
-          userDispatch({ type: 'login', payload: updatedUser });
+        if (type && type > 0 && token_key) {
+          // 日卡/周卡/月卡：显示生成的 API Key
+          const typeNames = { 1: t('日卡'), 2: t('周卡'), 3: t('月卡') };
+          Modal.success({
+            title: t('兑换成功！'),
+            content: (
+              <div>
+                <p>{t('类型：') + (typeNames[type] || t('未知'))}</p>
+                <p>{t('总额度：') + renderQuota(data)}</p>
+                <p style={{ marginTop: 8 }}>{t('生成的 API Key：')}</p>
+                <p
+                  style={{
+                    wordBreak: 'break-all',
+                    background: 'var(--semi-color-fill-0)',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    fontFamily: 'monospace',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    navigator.clipboard.writeText('sk-' + token_key);
+                    showSuccess(t('已复制到剪贴板'));
+                  }}
+                >
+                  sk-{token_key}
+                </p>
+                <p style={{ color: 'var(--semi-color-warning)', marginTop: 8, fontSize: '12px' }}>
+                  {t('请妥善保存此 API Key，关闭后将无法再次查看。点击可复制。')}
+                </p>
+              </div>
+            ),
+            centered: true,
+          });
+        } else {
+          // 余额类型
+          Modal.success({
+            title: t('兑换成功！'),
+            content: t('成功兑换额度：') + renderQuota(data),
+            centered: true,
+          });
+          if (userState.user) {
+            const updatedUser = {
+              ...userState.user,
+              quota: userState.user.quota + data,
+            };
+            userDispatch({ type: 'login', payload: updatedUser });
+          }
         }
         setRedemptionCode('');
       } else {

@@ -63,6 +63,9 @@ const EditRedemptionModal = (props) => {
     quota: 100000,
     count: 1,
     expired_time: null,
+    type: 0,
+    daily_quota_dollar: 0,
+    group: '',
   });
 
   const handleCancel = () => {
@@ -78,6 +81,10 @@ const EditRedemptionModal = (props) => {
         data.expired_time = null;
       } else {
         data.expired_time = new Date(data.expired_time * 1000);
+      }
+      // Convert daily_quota (internal units) back to dollars for the form
+      if (data.daily_quota) {
+        data.daily_quota_dollar = data.daily_quota / 500000;
       }
       formApiRef.current?.setValues({ ...getInitValues(), ...data });
     } else {
@@ -105,7 +112,17 @@ const EditRedemptionModal = (props) => {
     let localInputs = { ...values };
     localInputs.count = parseInt(localInputs.count) || 0;
     localInputs.quota = parseInt(localInputs.quota) || 0;
+    localInputs.type = parseInt(localInputs.type) || 0;
     localInputs.name = name;
+    // Convert daily_quota from dollars to internal units
+    if (localInputs.type > 0) {
+      localInputs.daily_quota = Math.round((parseFloat(localInputs.daily_quota_dollar) || 0) * 500000);
+      localInputs.group = localInputs.group || '';
+    } else {
+      localInputs.daily_quota = 0;
+      localInputs.group = '';
+    }
+    delete localInputs.daily_quota_dollar;
     if (!localInputs.expired_time) {
       localInputs.expired_time = 0;
     } else {
@@ -286,6 +303,45 @@ const EditRedemptionModal = (props) => {
 
                   <Row gutter={12}>
                     <Col span={12}>
+                      <Form.Select
+                        field='type'
+                        label={t('类型')}
+                        style={{ width: '100%' }}
+                        optionList={[
+                          { value: 0, label: t('余额') },
+                          { value: 1, label: t('日卡') },
+                          { value: 2, label: t('周卡') },
+                          { value: 3, label: t('月卡') },
+                        ]}
+                      />
+                    </Col>
+                    {!isEdit && (
+                      <Col span={12}>
+                        <Form.InputNumber
+                          field='count'
+                          label={t('生成数量')}
+                          min={1}
+                          rules={[
+                            { required: true, message: t('请输入生成数量') },
+                            {
+                              validator: (rule, v) => {
+                                const num = parseInt(v, 10);
+                                return num > 0
+                                  ? Promise.resolve()
+                                  : Promise.reject(t('生成数量必须大于0'));
+                              },
+                            },
+                          ]}
+                          style={{ width: '100%' }}
+                          showClear
+                        />
+                      </Col>
+                    )}
+                  </Row>
+
+                  {values.type === 0 && (
+                  <Row gutter={12}>
+                    <Col span={24}>
                       <Form.AutoComplete
                         field='quota'
                         label={t('额度')}
@@ -317,29 +373,49 @@ const EditRedemptionModal = (props) => {
                         showClear
                       />
                     </Col>
-                    {!isEdit && (
-                      <Col span={12}>
-                        <Form.InputNumber
-                          field='count'
-                          label={t('生成数量')}
-                          min={1}
-                          rules={[
-                            { required: true, message: t('请输入生成数量') },
-                            {
-                              validator: (rule, v) => {
-                                const num = parseInt(v, 10);
-                                return num > 0
-                                  ? Promise.resolve()
-                                  : Promise.reject(t('生成数量必须大于0'));
-                              },
-                            },
-                          ]}
-                          style={{ width: '100%' }}
-                          showClear
-                        />
-                      </Col>
-                    )}
                   </Row>
+                  )}
+
+                  {values.type > 0 && (
+                  <Row gutter={12}>
+                    <Col span={12}>
+                      <Form.InputNumber
+                        field='daily_quota_dollar'
+                        label={t('每日额度($)')}
+                        placeholder={t('每日额度，单位美元')}
+                        min={0}
+                        step={0.1}
+                        precision={2}
+                        rules={[
+                          { required: true, message: t('请输入每日额度') },
+                          {
+                            validator: (rule, v) => {
+                              const num = parseFloat(v);
+                              return num > 0
+                                ? Promise.resolve()
+                                : Promise.reject(t('每日额度必须大于0'));
+                            },
+                          },
+                        ]}
+                        style={{ width: '100%' }}
+                        extraText={
+                          values.daily_quota_dollar > 0
+                            ? renderQuotaWithPrompt(Math.round((Number(values.daily_quota_dollar) || 0) * 500000))
+                            : ''
+                        }
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Form.Input
+                        field='group'
+                        label={t('分组')}
+                        placeholder={t('请输入渠道分组名称')}
+                        style={{ width: '100%' }}
+                        showClear
+                      />
+                    </Col>
+                  </Row>
+                  )}
                 </Card>
               </div>
             )}

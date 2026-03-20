@@ -1015,7 +1015,7 @@ func TopUp(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	quota, err := model.Redeem(req.Key, id)
+	result, err := model.Redeem(req.Key, id)
 	if err != nil {
 		if errors.Is(err, model.ErrRedeemFailed) {
 			common.ApiErrorI18n(c, i18n.MsgRedeemFailed)
@@ -1024,11 +1024,22 @@ func TopUp(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    quota,
-	})
+	if result.Type > 0 {
+		// 日卡/周卡/月卡：返回生成的 API Key
+		c.JSON(http.StatusOK, gin.H{
+			"success":   true,
+			"message":   "",
+			"data":      result.Quota,
+			"type":      result.Type,
+			"token_key": result.TokenKey,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "",
+			"data":    result.Quota,
+		})
+	}
 }
 
 type UpdateUserSettingRequest struct {
