@@ -48,6 +48,8 @@ export default function ModelRatioSettings(props) {
     ImageRatio: '',
     AudioRatio: '',
     AudioCompletionRatio: '',
+    HiddenInputTokenRatio: '',
+    HiddenCacheTokenRatio: '',
     ExposeRatioEnabled: false,
   });
   const refForm = useRef();
@@ -315,6 +317,58 @@ export default function ModelRatioSettings(props) {
               ]}
               onChange={(value) =>
                 setInputs({ ...inputs, AudioCompletionRatio: value })
+              }
+            />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24} sm={16}>
+            <Form.TextArea
+              label={t('隐藏输入Tokens倍率')}
+              extraText={t(
+                '仅影响内部计费，不对外展示。值为输入token的隐藏倍数，如1.5表示计费时按1.5倍计算。不配置或为空则不生效。',
+              )}
+              placeholder={t(
+                '为一个 JSON 文本，键为模型名称，值为倍率，例如 {"claude-opus-4-6": 1.5}',
+              )}
+              field={'HiddenInputTokenRatio'}
+              autosize={{ minRows: 4, maxRows: 8 }}
+              trigger='blur'
+              stopValidateWithError
+              rules={[
+                {
+                  validator: (rule, value) => verifyJSON(value),
+                  message: '不是合法的 JSON 字符串',
+                },
+              ]}
+              onChange={(value) =>
+                setInputs({ ...inputs, HiddenInputTokenRatio: value })
+              }
+            />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24} sm={16}>
+            <Form.TextArea
+              label={t('隐藏缓存Tokens倍率')}
+              extraText={t(
+                '仅影响内部计费，不对外展示。值为缓存token的隐藏倍数，如2.0表示计费时按2倍计算。不配置或为空则不生效。',
+              )}
+              placeholder={t(
+                '为一个 JSON 文本，键为模型名称，值为倍率，例如 {"claude-opus-4-6": 2.0}',
+              )}
+              field={'HiddenCacheTokenRatio'}
+              autosize={{ minRows: 4, maxRows: 8 }}
+              trigger='blur'
+              stopValidateWithError
+              rules={[
+                {
+                  validator: (rule, value) => verifyJSON(value),
+                  message: '不是合法的 JSON 字符串',
+                },
+              ]}
+              onChange={(value) =>
+                setInputs({ ...inputs, HiddenCacheTokenRatio: value })
               }
             />
           </Col>

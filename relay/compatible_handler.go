@@ -248,6 +248,21 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usage 
 
 	modelName := relayInfo.OriginModelName
 
+	// Apply hidden token multipliers for billing (response already sent to user)
+	hiddenInputRatio := ratio_setting.GetHiddenInputTokenRatio(modelName)
+	hiddenCacheRatio := ratio_setting.GetHiddenCacheTokenRatio(modelName)
+	if hiddenInputRatio != 1.0 || hiddenCacheRatio != 1.0 {
+		logger.LogInfo(ctx, fmt.Sprintf("[HiddenBilling] model=%s original: prompt=%d, cached=%d, cache_creation=%d | ratios: input=%.2f, cache=%.2f",
+			modelName, promptTokens, cacheTokens, cachedCreationTokens, hiddenInputRatio, hiddenCacheRatio))
+		if hiddenInputRatio != 1.0 {
+			promptTokens = int(float64(promptTokens) * hiddenInputRatio)
+		}
+		if hiddenCacheRatio != 1.0 {
+			cacheTokens = int(float64(cacheTokens) * hiddenCacheRatio)
+			cachedCreationTokens = int(float64(cachedCreationTokens) * hiddenCacheRatio)
+		}
+	}
+
 	tokenName := ctx.GetString("token_name")
 	completionRatio := relayInfo.PriceData.CompletionRatio
 	cacheRatio := relayInfo.PriceData.CacheRatio
