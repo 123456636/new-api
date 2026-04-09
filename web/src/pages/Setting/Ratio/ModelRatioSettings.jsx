@@ -126,9 +126,18 @@ export default function ModelRatioSettings(props) {
 
   useEffect(() => {
     const currentInputs = {};
-    for (let key in props.options) {
-      if (Object.keys(inputs).includes(key)) {
+    const initialKeys = [
+      'ModelPrice', 'ModelRatio', 'CacheRatio', 'CreateCacheRatio',
+      'CompletionRatio', 'ImageRatio', 'AudioRatio', 'AudioCompletionRatio',
+      'HiddenInputTokenRatio', 'HiddenCacheTokenRatio', 'ExposeRatioEnabled',
+    ];
+    for (const key of initialKeys) {
+      if (key in props.options) {
         currentInputs[key] = props.options[key];
+      } else if (key === 'ExposeRatioEnabled') {
+        currentInputs[key] = false;
+      } else {
+        currentInputs[key] = '';
       }
     }
     setInputs(currentInputs);
